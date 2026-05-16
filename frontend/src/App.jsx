@@ -215,7 +215,6 @@ export default function App() {
         *, *::before, *::after { box-sizing: border-box; }
         
         .app {
-          min-height: 100vh;
           display: flex;
           flex-direction: column;
           background: var(--color-bg, #f8f9fa);
