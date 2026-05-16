@@ -1,0 +1,17 @@
+:root {
+  --color-primary: #1B5E3B;
+  --color-primary-light: #2E7D52;
+  --color-primary-muted: #E8F5EE;
+  --color-accent: #C9A84C;
+  --color-surface: #FFFFFF;
+  --color-bg: #F4F6F5;
+  --color-text-primary: #1A2E25;
+  --color-text-secondary: #5A7A6A;
+  --color-border: #D4E0DA;
+  --color-node-b-bg: #0D1F17;
+  --color-filter-idle: #9EADA6;
+  --color-filter-active: #1B5E3B;
+  --color-filter-ignored: #D4E0DA;
+  --color-filter-error: #B91C1C;
+  --color-filter-done: #2E7D52;
+}
