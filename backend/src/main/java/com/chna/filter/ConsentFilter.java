@@ -66,10 +66,16 @@ public class ConsentFilter {
         ctx.setConsentToken(consentToken);
 
         if (!valid) {
+            String reason = "Accès Refusé : Jeton de consentement invalide.";
+            if ("MOCK_NO_CONSENT".equals(token)) {
+                reason = "Accès Refusé : Aucun consentement enregistré pour ce patient (Manquant).";
+            } else if ("MOCK_REVOKED_CONSENT".equals(token)) {
+                reason = "Accès Refusé : Le consentement de ce patient a été révoqué / expiré.";
+            }
             // 3a. Token rejected → emit "error" and block the pipeline
-            emitter.emit(2, "error", "Jeton de consentement invalide ou révoqué — accès refusé.");
+            emitter.emit(2, "error", reason);
             ctx.setBlocked(true);
-            ctx.setBlockReason("Consentement invalide : token = " + token);
+            ctx.setBlockReason(reason);
             return ctx;
         }
 

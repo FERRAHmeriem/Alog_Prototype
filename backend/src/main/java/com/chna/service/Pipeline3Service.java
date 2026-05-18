@@ -62,9 +62,8 @@ public class Pipeline3Service {
         // Filtre ① — IGNORED (Node A is again in Demandeur mode — no translation needed)
         emitter.emit(1, "ignored", "Non activé — Nœud A reçoit en FHIR R4 directement");
 
-        // Filtre ② — ConsentFilter: re-verify that received data matches the request (integrity check)
-        ctx = consentFilter.process(ctx);
-        if (ctx.isBlocked()) return ctx;
+        // Filtre ② — IGNORED in Pipeline 3 (Already validated on emission)
+        emitter.emit(2, "ignored", "Non activé — Déjà vérifié lors de l'émission");
 
         // Filtre ③ — AuditFilter: record reception + Smart Fetching local persistence
         ctx = auditFilter.process(ctx);

@@ -1,21 +1,30 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const FILTER_COLORS = { 1: '#8b5cf6', 2: '#ca8a04', 3: '#16a34a', 4: '#d97706' };
 
 export default function SidebarAudit({ entries, filterNode }) {
+  const listRef = useRef(null);
+
   // If filterNode is given, only show entries from that node
   const filtered = filterNode
     ? entries.filter(e => e.noeud === filterNode)
     : entries;
 
+  // Auto-scroll to the bottom when a new entry is appended
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [filtered.length]);
+
   return (
     <div className="sidebar">
       <div className="sidebar-head">
         <div className="sidebar-title">AUDIT TRAIL</div>
-        <div className="sidebar-sub">Événements P2P temps réel</div>
+        <div className="sidebar-sub">Événements P2P temps réel (Chronologique)</div>
       </div>
 
-      <div className="sidebar-list">
+      <div className="sidebar-list" ref={listRef}>
         {filtered.length === 0 ? (
           <div className="audit-empty">Aucun événement</div>
         ) : (
@@ -79,6 +88,7 @@ export default function SidebarAudit({ entries, filterNode }) {
           display: flex;
           flex-direction: column;
           gap: 0.4rem;
+          scroll-behavior: smooth;
         }
         .audit-empty {
           text-align: center;

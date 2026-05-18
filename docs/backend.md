@@ -1,43 +1,43 @@
-# Backend Implementation
+# Backend Implementation — CHNA
 
-The backend of MediLink is built using **Java Spring Boot WebFlux**. This reactive stack was chosen to handle the highly concurrent nature of the P2P network and to provide seamless real-time updates to the frontend via Server-Sent Events (SSE).
+The backend of the CHNA prototype is built using **Java Spring Boot WebFlux**. This reactive stack was selected to handle the highly concurrent, event-driven nature of P2P network transactions and to stream real-time logs to the frontend via Server-Sent Events (SSE).
 
 ## 1. Core Technologies
 - **Spring Boot 3.x**: Application framework.
-- **Spring WebFlux (Project Reactor)**: Provides the non-blocking, event-driven foundation using `Mono` and `Flux`.
-- **Server-Sent Events (SSE)**: Used to push pipeline state changes and audit logs to the frontend in real-time.
+- **Spring WebFlux (Project Reactor)**: Provides the non-blocking, event-driven foundation using `Mono` and `Flux` publishers.
+- **Server-Sent Events (SSE)**: Used to broadcast pipeline status animations and chronological audit logs to the React application in real-time.
 
-## 2. Event Broadcasting (`FilterEventEmitter`)
-Because the prototype needs to display the pipeline animation simultaneously across multiple browser windows (simulating different physical nodes), the backend acts as a central event broadcaster.
+---
 
-The `FilterEventEmitter` uses a Reactor `Sinks.Many` to multicast events.
-- **Resilience**: It is configured using `Sinks.many().replay().limit(64)` to ensure that late-connecting clients or re-connecting clients immediately receive the recent event history, preventing missed animations.
-- **Events**: It emits two types of events:
-  - `FilterEvent`: Represents the status of a specific filter (e.g., `STARTING`, `DONE`, `IGNORED`).
-  - `PipelineData`: Represents the actual payload moving through the pipeline (e.g., raw SIH data, transformed FHIR data).
+## 2. Real-Time Multicasting (`FilterEventEmitter`)
+Because the frontend displays a real-time visualization of the network pipeline, the backend acts as an event broadcaster using a Project Reactor `Sinks.Many` to multicast events.
 
-## 3. The Filter Chain (`Pipeline2Service`)
-The P2P process is orchestrated by `Pipeline2Service`, which chains the four filters together asynchronously.
+- **Replay Buffer**: Configured with `Sinks.many().replay().limit(64)` to ensure that any late-connecting client immediately receives recent history, preventing missed animations.
+- **Payload Types**: Emits two types of events:
+  - `FilterEvent`: Tracks the current state of a filter (e.g. `idle`, `active`, `done`, `ignored`, `error`).
+  - `FilterEvent (audit)`: Appends to the real-time chronological P2P logs in the sidebar.
 
-The service simulates the 3 pipelines defined in the architecture:
-1. **Node A Request**: Activates the `ConsentFilter` and `AuditFilter`.
-2. **Node B Response**: Activates all 4 filters. It fetches mocked raw data (`SihFetchFilter`), validates consent (`ConsentFilter`), transforms the data (`FhirTranslatorFilter`), and audits the action (`AuditFilter`).
-3. **Node A Reception**: Activates the `ConsentFilter` (to check integrity) and `AuditFilter` (for local Smart Fetching).
+---
 
-Each filter is implemented as a reactive component returning a `Mono`.
+## 3. Asynchronous Filter Chains
+The reactive pipelines are executed asynchronously via three core services corresponding to the P2P transaction steps:
 
-### Delay Simulation
-To make the pipeline visually pedagogical, artificial delays (`Mono.delay`) are injected into the reactive chain. This allows the observer to see the sequential execution of the filters in the frontend UI.
+1. **`Pipeline1Service` (Nœud A Request)**: 
+   Triggered by `POST /api/pipeline/1`. Prepares request, checks/signs consent, and emits logs.
+2. **`Pipeline2Service` (Nœud B Process)**: 
+   Triggered by `POST /api/pipeline/2`. Simulates the detainer node fetching raw proprietary records (`SihFetchFilter`), checking ECDSA signatures (`ConsentFilter`), translating to standard FHIR R4 resources (`FhirTranslatorFilter`), and writing to the audit log (`AuditFilter`).
+3. **`Pipeline3Service` (Nœud A Reception)**: 
+   Triggered by `POST /api/pipeline/3`. Simulates Nœud A receiving the FHIR report, verifying integrity, writing to the Smart Cache, and logging completion.
 
-## 4. The 4 Filters Implementation
+### Pedagogical Delay Injection
+To make the sequential execution of filters clearly visible to observers during demonstrations, artificial delays (`Mono.delay`) are injected in the reactive chains.
 
-- `SihFetchFilter.java` (Filter 4): Simulates connecting to a legacy database. Emits a `RAW_DATA` event containing the JSON payload representing the proprietary format.
-- `FhirTranslatorFilter.java` (Filter 1): Acts as the Anti-Corruption Layer. It receives the raw data and transforms it into a standard FHIR R4 `DiagnosticReport`. Emits a `FHIR_DATA` event.
-- `ConsentFilter.java` (Filter 2): Simulates ECDSA cryptographic token validation. Emits specific audit messages regarding the token verification.
-- `AuditFilter.java` (Filter 3): Acts as the generic audit and Smart Cache layer. It emits `audit` events that populate the real-time Audit Trail in the UI.
+---
 
-## 5. API Endpoints
-The frontend interacts with the backend primarily through two endpoints exposed in `PipelineController`:
+## 4. API Endpoints (`PipelineController.java`)
+Exposes the REST API and the live SSE stream:
 
-- `GET /api/events`: The SSE stream endpoint. The React application connects to this endpoint to receive a continuous `Flux` of `ServerSentEvent` objects.
-- `POST /api/trigger`: The trigger endpoint. When the user clicks "Consulter Imagerie", this endpoint invokes the `Pipeline2Service` to start the reactive chain.
+- `POST /api/pipeline/1`: Initiates a P2P consultation request.
+- `POST /api/pipeline/2`: Remotely extracts local records and translates them to FHIR.
+- `POST /api/pipeline/3`: Persists the standard FHIR document inside the local Smart Cache.
+- `GET /api/events`: Stream endpoint. The React app connects here to receive a continuous `Flux` of `ServerSentEvent` objects containing pipeline updates.

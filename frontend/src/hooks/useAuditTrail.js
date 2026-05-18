@@ -4,7 +4,7 @@ export function useAuditTrail() {
   const [auditEntries, setAuditEntries] = useState([]);
 
   const addAuditEntry = useCallback((entry) => {
-    setAuditEntries((prev) => [entry, ...prev]); // plus récent en haut
+    setAuditEntries((prev) => [...prev, entry]); // plus ancien en haut (chronologique)
   }, []);
 
   return { auditEntries, addAuditEntry };

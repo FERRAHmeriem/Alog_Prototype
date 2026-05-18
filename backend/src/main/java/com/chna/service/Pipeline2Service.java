@@ -68,14 +68,14 @@ public class Pipeline2Service {
         ctx = consentFilter.process(ctx);
         if (ctx.isBlocked()) return ctx;
 
-        // Filtre ③ — AuditFilter: Node B records that this consultation occurred
-        ctx = auditFilter.process(ctx);
-
         // Filtre ④ — SihFetchFilter: reads local SIH in proprietary format (READ-ONLY)
         ctx = sihFetchFilter.process(ctx);
 
         // Filtre ① — FhirTranslatorFilter: Anti-Corruption Layer translates to FHIR R4
         ctx = fhirTranslatorFilter.process(ctx);
+
+        // Filtre ③ — AuditFilter: Node B records that this consultation occurred
+        ctx = auditFilter.process(ctx);
 
         return ctx;
     }
